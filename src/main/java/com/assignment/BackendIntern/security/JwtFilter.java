@@ -1,6 +1,7 @@
 package com.assignment.BackendIntern.security;
 
 
+
 import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.HashMap;
@@ -21,8 +22,10 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import lombok.extern.slf4j.Slf4j;
 
 @Component
+@Slf4j
 public class JwtFilter extends OncePerRequestFilter {
 
     @Autowired private JwtUtil jwtUtil;
@@ -49,6 +52,8 @@ public class JwtFilter extends OncePerRequestFilter {
 
        
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+        	 log.warn("No JWT token in request: {}", request.getRequestURI());
+
             sendErrorResponse(response, request, "Token missing or invalid format");
             return;
         }
@@ -57,7 +62,9 @@ public class JwtFilter extends OncePerRequestFilter {
           
             token = authHeader.substring(7).trim();
             username = jwtUtil.extractUsername(token);
+            log.info("JWT token extracted for user: {}", username);
         } catch (Exception e) {
+        	log.error("Invalid JWT token: {}", e.getMessage());
             sendErrorResponse(response, request, "Invalid or malformed token");
             return;
         }
@@ -79,13 +86,18 @@ public class JwtFilter extends OncePerRequestFilter {
                     );
 
                     SecurityContextHolder.getContext().setAuthentication(authToken);
+                    log.info("User authenticated successfully: {}", username);
 
                 } else {
+                	  log.warn("JWT token validation failed for user: {}", username);
+
                     sendErrorResponse(response, request, "Token validation failed");
                     return;
                 }
             }
         } catch (Exception e) {
+        	 log.error("Authentication error for user {}: {}", username, e.getMessage());
+
             sendErrorResponse(response, request, "Authentication error");
             return;
         }

@@ -1,5 +1,6 @@
 package com.assignment.BackendIntern.exception;
 
+
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
@@ -12,13 +13,16 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.servlet.NoHandlerFoundException;
 
 import jakarta.servlet.http.HttpServletRequest;
+import lombok.extern.slf4j.Slf4j;
 
 @RestControllerAdvice
+@Slf4j
 public class GlobalExceptionHandler {
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<Map<String, Object>> handleValidationErrors(
             MethodArgumentNotValidException ex) {
+    	 log.warn("Validation failed: {}", ex.getMessage());
         Map<String, Object> response = new HashMap<>();
         Map<String, String> fieldErrors = new HashMap<>();
         ex.getBindingResult().getFieldErrors()
@@ -32,43 +36,50 @@ public class GlobalExceptionHandler {
   
     @ExceptionHandler(ResourceNotFoundException.class)
     public ResponseEntity<Map<String, Object>> handleNotFound(ResourceNotFoundException ex) {
+    	log.warn("Resource not found: {}", ex.getMessage());
         return buildResponse(HttpStatus.NOT_FOUND, ex.getMessage());
     }
 
 
     @ExceptionHandler(UnauthorizedException.class)
     public ResponseEntity<Map<String, Object>> handleUnauthorized(UnauthorizedException ex) {
+    	log.warn("Unauthorized access: {}", ex.getMessage());
         return buildResponse(HttpStatus.FORBIDDEN, ex.getMessage());
     }
 
    
     @ExceptionHandler(UserAlreadyExistsException.class)
     public ResponseEntity<Map<String, Object>> handleUserExists(UserAlreadyExistsException ex) {
+    	log.warn("User already exists: {}", ex.getMessage());
         return buildResponse(HttpStatus.CONFLICT, ex.getMessage());
     }
 
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<Map<String, Object>> handleGeneric(Exception ex) {
+    	 log.error("Unexpected error: {}", ex.getMessage());
         return buildResponse(HttpStatus.INTERNAL_SERVER_ERROR, "Something went wrong: " + ex.getMessage());
     }
 
 
-    private ResponseEntity<Map<String, Object>> buildResponse(HttpStatus status, String message) {
-        Map<String, Object> response = new HashMap<>();
-        response.put("timestamp", LocalDateTime.now());
-        response.put("status", status.value());
-        response.put("error", message);
-        return ResponseEntity.status(status).body(response);
-    }
+ 
     
     @ExceptionHandler(NoHandlerFoundException.class)
     public ErrorResponse handleNotFound(HttpServletRequest request) {
+    	log.warn("API endpoint not found: {}", request.getRequestURI());
         return new ErrorResponse(
                 LocalDateTime.now().toString(),
                 404,
                 "API endpoint not found",
                 request.getRequestURI()
         );
+    }
+    
+    private ResponseEntity<Map<String, Object>> buildResponse(HttpStatus status, String message) {
+        Map<String, Object> response = new HashMap<>();
+        response.put("timestamp", LocalDateTime.now());
+        response.put("status", status.value());
+        response.put("error", message);
+        return ResponseEntity.status(status).body(response);
     }
 }

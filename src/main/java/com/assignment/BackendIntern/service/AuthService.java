@@ -1,6 +1,7 @@
 package com.assignment.BackendIntern.service;
 
 
+
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -15,7 +16,10 @@ import com.assignment.BackendIntern.model.User;
 import com.assignment.BackendIntern.repository.UserRepository;
 import com.assignment.BackendIntern.security.JwtUtil;
 
+import lombok.extern.slf4j.Slf4j;
+
 @Service
+@Slf4j
 public class AuthService {
 
     private final UserRepository userRepository;
@@ -32,8 +36,10 @@ public class AuthService {
 
  
     public String register(RegisterRequest request) {
+    	 log.info("Register attempt for email: {}", request.getEmail());
 
     	  if (userRepository.findByEmail(request.getEmail()).isPresent()) {
+    		  log.warn("Registration failed — email already exists: {}", request.getEmail());
               throw new UserAlreadyExistsException(AppConstants.USER_ALREADY_EXISTS);
           }
     	  
@@ -45,16 +51,25 @@ public class AuthService {
 
         userRepository.save(user);
 
+        log.info("User registered successfully with email: {}", request.getEmail());
+
         return AppConstants.REGISTER_SUCCESS;
     }
 
 
     public AuthResponse login(AuthRequest request) {
+    	 log.info("Login attempt for email: {}", request.getEmail());
+
 
         User user = userRepository.findByEmail(request.getEmail())
-                .orElseThrow(() -> new ResourceNotFoundException(AppConstants.USER_NOT_FOUND));
+        		.orElseThrow(() -> {
+                    log.warn("Login failed — user not found: {}", request.getEmail());
+                    return new ResourceNotFoundException(AppConstants.USER_NOT_FOUND);
+                });
 
         if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
+        	  log.warn("Login failed — invalid password for email: {}", request.getEmail());
+              
         	throw new UnauthorizedException("Invalid password");
         }
 
