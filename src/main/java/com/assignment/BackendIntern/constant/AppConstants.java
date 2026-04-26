@@ -52,4 +52,5 @@ public class AppConstants {
     public static final String TITLE_SIZE     = "Title must be between 2 and 100 characters";
     public static final String DESC_SIZE      = "Description cannot exceed 500 characters";
     public static final String STATUS_INVALID = "Status must be PENDING, IN_PROGRESS or DONE";
+	public static final long JWT_EXPIRY_MS = 24 * 60 * 60 * 1000; 
 }

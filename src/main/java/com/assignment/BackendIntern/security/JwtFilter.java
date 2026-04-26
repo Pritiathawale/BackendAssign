@@ -16,6 +16,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import com.assignment.BackendIntern.constant.AppConstants;
+import com.assignment.BackendIntern.service.TokenCacheService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import jakarta.servlet.FilterChain;
@@ -30,6 +31,8 @@ public class JwtFilter extends OncePerRequestFilter {
 
     @Autowired private JwtUtil jwtUtil;
     @Autowired private CustomUserDetailsService userDetailsService;
+    
+    @Autowired private TokenCacheService tokenCacheService; 
     
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) {
@@ -61,6 +64,14 @@ public class JwtFilter extends OncePerRequestFilter {
         try {
           
             token = authHeader.substring(7).trim();
+            
+            //check if token is blacklisted
+            if (tokenCacheService.isTokenBlacklisted(token)) {
+                log.warn("Blacklisted token used for: {}", request.getRequestURI());
+                sendErrorResponse(response, request, "Token has been invalidated. Please login again.");
+                return;
+            }
+            
             username = jwtUtil.extractUsername(token);
             log.info("JWT token extracted for user: {}", username);
         } catch (Exception e) {
